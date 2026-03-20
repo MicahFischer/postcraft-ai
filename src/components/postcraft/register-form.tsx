@@ -8,6 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/actions/auth";
 
+const STEP_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      reject(new Error(`${label} timed out — database or network may be unreachable.`));
+    }, ms);
+    promise
+      .then((v) => {
+        clearTimeout(id);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(id);
+        reject(e);
+      });
+  });
+}
+
 export function RegisterForm() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -15,30 +34,57 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [step, setStep] = useState<"idle" | "register" | "signin">("idle");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const result = await registerUser({ name, email, password });
-    if (!result.ok) {
-      setError(result.error);
+    setStep("register");
+
+    try {
+      const result = await withTimeout(
+        registerUser({ name, email, password }),
+        STEP_MS,
+        "Creating account",
+      );
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setStep("signin");
+      const sign = await withTimeout(
+        signIn("credentials", {
+          email: email.trim().toLowerCase(),
+          password,
+          redirect: false,
+        }),
+        STEP_MS,
+        "Sign-in",
+      );
+
+      if (sign?.error) {
+        setError("Account created but sign-in failed. Try logging in.");
+        return;
+      }
+      router.push("/onboarding");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+    } finally {
       setPending(false);
-      return;
+      setStep("idle");
     }
-    const sign = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    setPending(false);
-    if (sign?.error) {
-      setError("Account created but sign-in failed. Try logging in.");
-      return;
-    }
-    router.push("/onboarding");
-    router.refresh();
   }
+
+  const label =
+    step === "register"
+      ? "Creating account…"
+      : step === "signin"
+        ? "Signing you in…"
+        : "Create account";
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -74,7 +120,7 @@ export function RegisterForm() {
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Creating…" : "Create account"}
+        {pending ? label : "Create account"}
       </Button>
     </form>
   );

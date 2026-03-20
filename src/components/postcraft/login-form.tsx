@@ -20,18 +20,31 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    setPending(false);
-    if (res?.error) {
-      setError("Invalid email or password");
-      return;
+    try {
+      const res = await Promise.race([
+        signIn("credentials", {
+          email: email.trim().toLowerCase(),
+          password,
+          redirect: false,
+        }),
+        new Promise<null>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Sign-in timed out — check database connection.")),
+            30_000,
+          ),
+        ),
+      ]);
+      if (res?.error) {
+        setError("Invalid email or password");
+        return;
+      }
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setPending(false);
     }
-    router.push(callbackUrl);
-    router.refresh();
   }
 
   return (
