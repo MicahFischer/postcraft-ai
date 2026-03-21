@@ -4,6 +4,9 @@ import { LoginForm } from "@/components/postcraft/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
+/** Avoid cached HTML/RSC from an older deployment referencing stale server action IDs. */
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">

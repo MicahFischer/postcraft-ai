@@ -2,6 +2,9 @@ import Link from "next/link";
 import { RegisterForm } from "@/components/postcraft/register-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+/** Avoid cached HTML/RSC from an older deployment referencing stale server action IDs. */
+export const dynamic = "force-dynamic";
+
 export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
