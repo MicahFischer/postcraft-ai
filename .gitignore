@@ -38,8 +38,11 @@ yarn-error.log*
 .env.production.local
 !.env.example
 
-# vercel
+# vercel (may contain project/org identifiers)
 .vercel
+
+# cursor (local IDE settings — do not commit)
+.cursor/
 
 # typescript
 *.tsbuildinfo
