@@ -53,7 +53,9 @@ Open [http://localhost:3000](http://localhost:3000) (port set in `vite.config.ts
 
 1. **Framework preset:** In **Project → Settings → General**, set **Framework Preset** to **Vite** (not Next.js). If it still says Next.js, the build will fail looking for the `next` package.
 2. **Build:** `npm run build` → output in **`dist/`**. [`vercel.json`](vercel.json) pins **`framework`: `vite`**, **`buildCommand`**, **`outputDirectory`**, and SPA **rewrites**.
-3. Set **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** under **Environment Variables** for Production (and Preview if needed).
+3. Set **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** under **Environment Variables** for Production (and Preview if needed).  
+   - **Must** start with **`VITE_`** — plain `SUPABASE_URL` / `SUPABASE_ANON_KEY` are **not** exposed to the browser in Vite.  
+   - After adding or changing them, **redeploy** so the build picks them up.
 
 ## Project layout
 
