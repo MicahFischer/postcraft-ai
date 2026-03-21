@@ -47,10 +47,12 @@ export async function registerUser(input: z.infer<typeof registerSchema>) {
       return { ok: false as const, error: "Email already registered" };
     }
     if (e instanceof Prisma.PrismaClientInitializationError) {
+      const onVercel = Boolean(process.env.VERCEL);
       return {
         ok: false as const,
-        error:
-          "Database is not reachable. For Supabase, add ?sslmode=require (or &sslmode=require) to DATABASE_URL and DIRECT_URL. On Vercel, set both env vars and use the pooler URL for DATABASE_URL if needed.",
+        error: onVercel
+          ? "Cannot connect to the database from Vercel. In Supabase → Settings → Database: set DATABASE_URL to the Transaction pooler URI (port 6543) with ?pgbouncer=true&sslmode=require (or & for extra params). Set DIRECT_URL to the Direct connection URI (port 5432) with sslmode=require. Copy both into Vercel → Environment Variables and redeploy. Ensure the project is not paused."
+          : "Cannot connect to the database. Confirm DATABASE_URL and DIRECT_URL in .env match Supabase (TLS is applied automatically for supabase hosts). Check the project is not paused and network access is allowed.",
       };
     }
     return {

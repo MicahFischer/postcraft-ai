@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { patchSupabaseDatabaseEnv } from "@/lib/supabase-db-url";
+
+patchSupabaseDatabaseEnv();
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
