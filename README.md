@@ -14,7 +14,9 @@ Full-stack LinkedIn content workflow: **voice profile** → **AI post generation
 
 ### 1. Supabase database
 
-1. Create a project at [supabase.com](https://supabase.com).
+Step-by-step (new project + passwords + URLs): **[docs/supabase-new-database.md](docs/supabase-new-database.md)**.
+
+1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard) (**New project**).
 2. Open **Project Settings → Database** and find **Connection string**.
 3. Copy your **database password** (set when the project was created; reset it here if needed).
 4. Configure `.env` (see [`.env.example`](.env.example)):
