@@ -1,8 +1,6 @@
-"use client";
-
 import { useRef, useState, useTransition } from "react";
-import { CarouselTemplate } from "@prisma/client";
-import { saveCarousel, saveCarouselSlides } from "@/actions/carousel";
+import type { CarouselTemplate } from "@/lib/types";
+import { saveCarousel, saveCarouselSlides } from "@/lib/api/carousel";
 import type { CarouselSlide } from "@/lib/carousel/split-post";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

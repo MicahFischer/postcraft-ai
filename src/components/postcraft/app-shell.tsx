@@ -1,8 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -29,13 +26,14 @@ export function AppShell({
   children: React.ReactNode;
   user: { name?: string | null; email?: string | null };
 }) {
-  const pathname = usePathname();
+  const pathname = useLocation().pathname;
+  const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-56 shrink-0 border-r bg-card md:flex md:flex-col">
         <div className="flex h-14 items-center border-b px-4">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
+          <Link to="/dashboard" className="font-semibold tracking-tight">
             PostCraft AI
           </Link>
         </div>
@@ -43,7 +41,7 @@ export function AppShell({
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
-              href={href}
+              to={href}
               className={cn(
                 "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 pathname === href || pathname.startsWith(href + "/")
@@ -64,7 +62,10 @@ export function AppShell({
             variant="ghost"
             size="sm"
             className="mt-2 w-full justify-start gap-2"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/");
+            }}
           >
             <LogOut className="size-4" />
             Sign out

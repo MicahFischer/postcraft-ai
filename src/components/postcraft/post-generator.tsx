@@ -1,8 +1,7 @@
-"use client";
-
 import { useState, useTransition } from "react";
-import Link from "next/link";
-import { generatePostsAction, saveDraftPost } from "@/actions/post";
+import { Link } from "react-router-dom";
+import { generatePostsAction } from "@/lib/api/generate";
+import { saveDraftPost } from "@/lib/api/posts";
 import type { VoiceProfile } from "@/lib/voice-profile";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/lib/button-variants";
@@ -118,7 +117,7 @@ export function PostGenerator({
   if (!voice) {
     return (
       <p className="text-muted-foreground">
-        <Link href="/settings/voice" className="text-primary underline">
+        <Link to="/settings/voice" className="text-primary underline">
           Complete your voice profile
         </Link>{" "}
         to generate posts.
@@ -244,7 +243,7 @@ export function PostGenerator({
             </Button>
             {savedId && (
               <Link
-                href={`/posts/${savedId}/carousel`}
+                to={`/posts/${savedId}/carousel`}
                 className={cn(buttonVariants({ size: "sm", variant: "secondary" }))}
               >
                 Carousel

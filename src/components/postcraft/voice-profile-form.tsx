@@ -1,9 +1,8 @@
-"use client";
-
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import type { VoiceProfile } from "@/lib/voice-profile";
-import { saveVoiceProfile, saveProfileUrl } from "@/actions/voice";
+import { saveVoiceProfile, saveProfileUrl } from "@/lib/api/profile";
+import { useProfile } from "@/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +38,8 @@ export function VoiceProfileForm({
   submitLabel?: string;
   redirectTo?: string;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
+  const { refreshProfile } = useProfile();
   const [pending, startTransition] = useTransition();
   const [profile, setProfile] = useState<VoiceProfile>(
     initial ?? defaultProfile,
@@ -78,8 +78,8 @@ export function VoiceProfileForm({
         return;
       }
       await saveProfileUrl(url.trim() || null);
-      router.push(redirectTo);
-      router.refresh();
+      await refreshProfile();
+      navigate(redirectTo, { replace: true });
     });
   }
 

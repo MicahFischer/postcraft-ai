@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState, useTransition } from "react";
 import {
   DndContext,
@@ -21,20 +19,14 @@ import {
   setHours,
   setMinutes,
 } from "date-fns";
-import { reschedulePost } from "@/actions/schedule";
+import { reschedulePost } from "@/lib/api/posts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Copy, GripVertical } from "lucide-react";
-import type { PostStatus } from "@prisma/client";
+import type { CalendarPost } from "@/lib/types";
 
-export type CalendarPost = {
-  id: string;
-  content: string;
-  status: PostStatus;
-  scheduledAt: string | null;
-  updatedAt: string;
-};
+export type { CalendarPost };
 
 function PostCard({
   post,

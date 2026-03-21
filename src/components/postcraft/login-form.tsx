@@ -1,16 +1,16 @@
-"use client";
-
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl =
+    rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,25 +21,15 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     try {
-      const res = await Promise.race([
-        signIn("credentials", {
-          email: email.trim().toLowerCase(),
-          password,
-          redirect: false,
-        }),
-        new Promise<null>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Sign-in timed out — check database connection.")),
-            30_000,
-          ),
-        ),
-      ]);
-      if (res?.error) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (error) {
         setError("Invalid email or password");
         return;
       }
-      router.push(callbackUrl);
-      router.refresh();
+      navigate(callbackUrl, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed");
     } finally {

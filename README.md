@@ -1,133 +1,68 @@
 # PostCraft AI
 
-Full-stack LinkedIn content workflow: **voice profile** → **AI post generation** (variants) → **carousel PDF** → **calendar scheduling** (manual copy to LinkedIn; no LinkedIn API in MVP).
+LinkedIn content workflow: **voice profile** → **AI post generation** (variants) → **carousel PDF** → **calendar scheduling** (manual copy to LinkedIn; no LinkedIn API in MVP).
 
 ## Stack
 
-- **Next.js** (App Router) + TypeScript + Tailwind + shadcn/ui  
-- **PostgreSQL** + **Prisma**  
-- **Auth.js** (NextAuth v5) with email/password (bcrypt)  
-- **OpenAI** (`gpt-4o-mini`) for post generation  
-- **html2canvas** + **pdf-lib** for carousel PDF export  
+- **Vite** + **React** + **TypeScript** + **Tailwind** + shadcn/ui  
+- **Supabase Auth** (email/password) + **Supabase Postgres** with **Row Level Security**  
+- **Supabase Edge Function** `generate-post` — OpenAI `gpt-4o-mini` (API key stays server-side)  
+- **html2canvas** + **pdf-lib** for carousel PDF export (browser)  
 
 ## Setup
 
-### 1. Supabase database
+### 1. Supabase project
 
-Step-by-step (new project + passwords + URLs): **[docs/supabase-new-database.md](docs/supabase-new-database.md)**.
+1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard).
+2. **SQL Editor** (or CLI): run the migration in [`supabase/migrations/20250320190000_vite_supabase.sql`](supabase/migrations/20250320190000_vite_supabase.sql).  
+   - If you already have tables with the same names, back up data first or use a fresh project.
+3. **Authentication → Providers**: enable **Email**; for local dev you may disable “Confirm email” so sign-up signs in immediately.
 
-1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard) (**New project**).
-2. Open **Project Settings → Database** and find **Connection string**.
-3. Copy your **database password** (set when the project was created; reset it here if needed).
-4. Configure `.env` (see [`.env.example`](.env.example)):
+### 2. Edge Function (post generation)
 
-   **Simplest (direct connection, good for local dev):**  
-   Use the **URI** labeled **Direct connection** (port `5432`). Set **`DATABASE_URL`** and **`DIRECT_URL`** to the **same** string (Prisma uses `DIRECT_URL` for migrations). Add **`?sslmode=require`** (or **`&sslmode=require`**) — **required** for Supabase with Prisma.
+OpenAI must not run in the browser. Deploy the bundled function:
 
-   **Pooled connection (e.g. Vercel / serverless):**  
-   - **`DATABASE_URL`**: **Transaction pooler** URI (port `6543`) with **`pgbouncer=true`** and **`sslmode=require`**.  
-   - **`DIRECT_URL`**: **Direct connection** URI (port `5432`) with **`sslmode=require`** — used for migrations.
+```bash
+# Install Supabase CLI: https://supabase.com/docs/guides/cli
+supabase link --project-ref YOUR_PROJECT_REF
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase functions deploy generate-post
+```
 
-5. **IPv4 network** (if `Can't reach database server` from your machine):  
-   In Supabase **Project Settings → Database → Network restrictions**, allow your IP or use the pooler as documented in [Supabase networking](https://supabase.com/docs/guides/database/connecting-to-postgres).
+The function reads the user’s voice profile from `profiles` and calls OpenAI. `SUPABASE_URL` and `SUPABASE_ANON_KEY` are available in the Edge runtime; set **`OPENAI_API_KEY`** as a function secret.
 
-### 2. Environment variables
+### 3. Environment variables (Vite app)
 
-Copy `.env.example` to `.env` and fill in:
+Copy `.env.example` to `.env`:
 
-| Variable        | Purpose |
-| --------------- | ------- |
-| `DATABASE_URL`  | Postgres URL (direct or pooled; see above) |
-| `DIRECT_URL`    | Direct Postgres URL (same as `DATABASE_URL` if not using pooler) |
-| `AUTH_SECRET`   | Long random string: `openssl rand -base64 32` |
-| `OPENAI_API_KEY`| OpenAI API key |
+| Variable | Purpose |
+| -------- | ------- |
+| `VITE_SUPABASE_URL` | Project URL (Settings → API) |
+| `VITE_SUPABASE_ANON_KEY` | `anon` `public` key (Settings → API) |
 
-### 3. Migrate & run
+### 4. Run locally
 
 ```bash
 npm install
-npx prisma generate
-npx prisma migrate deploy
-# first time / dev schema iteration:
-# npx prisma migrate dev
-
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), register, complete onboarding, then use **Generate**, **Calendar**, and **Carousel**.
+Open [http://localhost:3000](http://localhost:3000) (port set in `vite.config.ts`).
 
-### Local Postgres (optional)
+## Deploy (e.g. Vercel)
 
-If you prefer Docker instead of Supabase, use `docker compose up -d` and set **`DATABASE_URL`** and **`DIRECT_URL`** to the same local URL (see comments in `.env.example`).
+1. **Build:** `npm run build` → static output in `dist/`.
+2. **Framework preset:** Vite, or “Other” with output directory **`dist`**.
+3. Set **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** in the hosting dashboard.
+4. This repo includes [`vercel.json`](vercel.json) with a SPA fallback so client-side routes work.
 
-## Deploy to Vercel
+## Project layout
 
-The app is a standard Next.js project; the build runs **`prisma generate`** automatically (see `package.json` → `build`).
+- `src/` — React app, React Router, UI  
+- `src/lib/api/` — Supabase data calls (RLS applies per logged-in user)  
+- `supabase/migrations/` — Postgres schema + RLS + auth trigger for `profiles`  
+- `supabase/functions/generate-post/` — Edge Function for OpenAI  
 
-### 1. Push code to Git
+## Migrating from the old Next.js + Prisma app
 
-Vercel deploys from GitHub/GitLab/Bitbucket, or you can use the [Vercel CLI](https://vercel.com/docs/cli).
-
-### 2. Create the project on Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new) and import your repository.
-2. **Framework Preset:** Next.js (default).
-3. **Build Command:** `npm run build` (default — already includes Prisma).
-4. **Install Command:** `npm install` (default).
-
-### 3. Environment variables (Vercel → Project → Settings → Environment Variables)
-
-Add these for **Production** (and Preview if you want preview DB/auth behavior):
-
-| Name | Value | Notes |
-|------|--------|--------|
-| `DATABASE_URL` | Supabase **Transaction pooler** URI + `?pgbouncer=true` | Port **6543**; avoids exhausting connections on serverless. [Supabase + Prisma](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler) |
-| `DIRECT_URL` | Supabase **Direct** connection URI | Port **5432**; required by Prisma schema (migrations / introspection). |
-| `AUTH_SECRET` | Long random string | Same as local: `openssl rand -base64 32` |
-| `AUTH_URL` | `https://<your-project>.vercel.app` | Your production URL (no trailing slash). Update if you add a custom domain. |
-| `OPENAI_API_KEY` | Your OpenAI key | Required for Generate. |
-
-`trustHost` is already enabled in auth config so Vercel hostnames work; `AUTH_URL` still keeps callbacks and links correct.
-
-### 4. Run database migrations (once per schema change)
-
-Migrations are **not** run on each Vercel build (by design). After the first deploy (or when you add migrations), apply them against Supabase from your machine:
-
-```bash
-# Use the same DIRECT_URL (or DATABASE_URL if direct-only) as in Supabase
-export DIRECT_URL="postgresql://postgres:...@db....supabase.co:5432/postgres"
-export DATABASE_URL="$DIRECT_URL"   # or your pooled URL if Prisma accepts it for migrate
-npx prisma migrate deploy
-```
-
-Or set `DATABASE_URL` / `DIRECT_URL` in a local `.env` pointing at Supabase and run `npx prisma migrate deploy`.
-
-### 5. Redeploy
-
-Trigger a redeploy from the Vercel dashboard after changing env vars.
-
-### CLI (optional)
-
-```bash
-npx vercel login
-npx vercel link
-npx vercel env pull .env.local   # optional: sync env for local preview
-npx vercel --prod
-```
-
----
-
-## Scripts
-
-| Command              | Description              |
-| -------------------- | ------------------------ |
-| `npm run dev`        | Development server       |
-| `npm run build`      | `prisma generate` + production build (Vercel uses this) |
-| `npm run db:migrate` | Prisma migrate (dev)     |
-| `npm run db:push`    | Push schema (prototyping)|
-
-## Notes
-
-- **Scheduling**: Drag drafts onto a day; times default to **9:00** local. There is no LinkedIn auto-post—use **Copy** and paste manually.
-- **Carousel PDF**: Client-side render to canvas then PDF; very long posts may need shorter slides.
-- **Hooks & topics**: Seeded library only (no live scraping in MVP).
+That stack used different tables (`User`, `Post`, …) and Auth.js. This version uses **`auth.users`** + **`public.profiles`**. Treat this as a **new schema**; migrate data manually if needed.

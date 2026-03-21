@@ -1,12 +1,9 @@
-"use client";
-
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { registerUser } from "@/actions/auth";
 
 const STEP_MS = 30_000;
 
@@ -28,7 +25,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 }
 
 export function RegisterForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,33 +40,33 @@ export function RegisterForm() {
     setStep("register");
 
     try {
-      const result = await withTimeout(
-        registerUser({ name, email, password }),
+      const emailNorm = email.trim().toLowerCase();
+      const { error: signUpErr } = await withTimeout(
+        supabase.auth.signUp({
+          email: emailNorm,
+          password,
+          options: { data: { full_name: name.trim() } },
+        }),
         STEP_MS,
         "Creating account",
       );
-      if (!result.ok) {
-        setError(result.error);
+      if (signUpErr) {
+        setError(signUpErr.message.includes("already") ? "Email already registered" : signUpErr.message);
         return;
       }
 
       setStep("signin");
-      const sign = await withTimeout(
-        signIn("credentials", {
-          email: email.trim().toLowerCase(),
-          password,
-          redirect: false,
-        }),
+      const { error: signInErr } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: emailNorm, password }),
         STEP_MS,
         "Sign-in",
       );
 
-      if (sign?.error) {
-        setError("Account created but sign-in failed. Try logging in.");
+      if (signInErr) {
+        setError("Account created but sign-in failed. Confirm your email or try logging in.");
         return;
       }
-      router.push("/onboarding");
-      router.refresh();
+      navigate("/onboarding", { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
