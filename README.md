@@ -22,11 +22,11 @@ Step-by-step (new project + passwords + URLs): **[docs/supabase-new-database.md]
 4. Configure `.env` (see [`.env.example`](.env.example)):
 
    **Simplest (direct connection, good for local dev):**  
-   Use the **URI** labeled **Direct connection** (port `5432`). Set **`DATABASE_URL`** and **`DIRECT_URL`** to the **same** string (Prisma uses `DIRECT_URL` for migrations).
+   Use the **URI** labeled **Direct connection** (port `5432`). Set **`DATABASE_URL`** and **`DIRECT_URL`** to the **same** string (Prisma uses `DIRECT_URL` for migrations). Add **`?sslmode=require`** (or **`&sslmode=require`**) — **required** for Supabase with Prisma.
 
    **Pooled connection (e.g. Vercel / serverless):**  
-   - **`DATABASE_URL`**: **Transaction pooler** URI (port `6543`) and append **`?pgbouncer=true`**.  
-   - **`DIRECT_URL`**: **Direct connection** URI (port `5432`) — used only for `prisma migrate`.
+   - **`DATABASE_URL`**: **Transaction pooler** URI (port `6543`) with **`pgbouncer=true`** and **`sslmode=require`**.  
+   - **`DIRECT_URL`**: **Direct connection** URI (port `5432`) with **`sslmode=require`** — used for migrations.
 
 5. **IPv4 network** (if `Can't reach database server` from your machine):  
    In Supabase **Project Settings → Database → Network restrictions**, allow your IP or use the pooler as documented in [Supabase networking](https://supabase.com/docs/guides/database/connecting-to-postgres).

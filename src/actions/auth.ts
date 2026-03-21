@@ -50,7 +50,7 @@ export async function registerUser(input: z.infer<typeof registerSchema>) {
       return {
         ok: false as const,
         error:
-          "Database is not reachable. Check DATABASE_URL / DIRECT_URL and that Postgres allows your network.",
+          "Database is not reachable. For Supabase, add ?sslmode=require (or &sslmode=require) to DATABASE_URL and DIRECT_URL. On Vercel, set both env vars and use the pooler URL for DATABASE_URL if needed.",
       };
     }
     return {

@@ -29,10 +29,12 @@ Open **[supabase.com/dashboard](https://supabase.com/dashboard)** and sign in (G
   - `DATABASE_URL`
   - `DIRECT_URL`
 
+**TLS (required):** append **`?sslmode=require`** to each Supabase URI (or **`&sslmode=require`** if the URI already has a `?`). Without it, Prisma/Node often fails with “database not reachable.”
+
 ### Recommended for Vercel (serverless)
 
-- **`DATABASE_URL`:** **Transaction pooler** URI (port **6543**), and append **`?pgbouncer=true`** to the query string (if not already there).
-- **`DIRECT_URL`:** **Direct connection** URI (port **5432**), no `pgbouncer`.
+- **`DATABASE_URL`:** **Transaction pooler** URI (port **6543**), and append **`?pgbouncer=true&sslmode=require`** (or add **`&sslmode=require`** if `?` is already there).
+- **`DIRECT_URL`:** **Direct connection** URI (port **5432**), with **`sslmode=require`**, no `pgbouncer`.
 
 Optional: append **`&connect_timeout=15`** to avoid long hangs on bad networks.
 
