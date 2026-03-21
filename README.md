@@ -51,10 +51,9 @@ Open [http://localhost:3000](http://localhost:3000) (port set in `vite.config.ts
 
 ## Deploy (e.g. Vercel)
 
-1. **Build:** `npm run build` → static output in `dist/`.
-2. **Framework preset:** Vite, or “Other” with output directory **`dist`**.
-3. Set **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** in the hosting dashboard.
-4. This repo includes [`vercel.json`](vercel.json) with a SPA fallback so client-side routes work.
+1. **Framework preset:** In **Project → Settings → General**, set **Framework Preset** to **Vite** (not Next.js). If it still says Next.js, the build will fail looking for the `next` package.
+2. **Build:** `npm run build` → output in **`dist/`**. [`vercel.json`](vercel.json) pins **`framework`: `vite`**, **`buildCommand`**, **`outputDirectory`**, and SPA **rewrites**.
+3. Set **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** under **Environment Variables** for Production (and Preview if needed).
 
 ## Project layout
 
